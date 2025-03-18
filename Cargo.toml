@@ -1,0 +1,8 @@
+[package]
+name = "mousefood"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+ratatui = { version = "0.29", default-features = false, features = ["all-widgets"] }
+embedded-graphics = "0.8.1"
