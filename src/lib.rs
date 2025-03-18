@@ -233,6 +233,9 @@ impl_for_color!(Bgr666);
 impl_for_color!(Rgb888);
 impl_for_color!(Bgr888);
 
+pub use ratatui;
+pub use embedded_graphics;
+
 #[cfg(test)]
 mod tests {
     // TODO: tests
