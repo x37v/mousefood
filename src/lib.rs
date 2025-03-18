@@ -156,23 +156,16 @@ macro_rules! impl_for_color {
 
                     // Background
                     let bg: $color_type = TermColor(cell.bg, TermColorType::Background).into();
-                    Rectangle::new(
-                        Point::new(position.x, position.y) + self.bg_offset,
-                        self.font.character_size,
-                    )
-                    .draw_styled(&PrimitiveStyle::with_fill(bg), self.display)
-                    .ok();
+                    Rectangle::new(position + self.bg_offset, self.font.character_size)
+                        .draw_styled(&PrimitiveStyle::with_fill(bg), self.display)
+                        .ok();
 
                     // Foreground
                     let fg: $color_type = TermColor(cell.fg, TermColorType::Foreground).into();
                     let style = MonoTextStyle::new(&self.font, fg);
-                    Text::new(
-                        cell.symbol(),
-                        Point::new(position.x, position.y) + self.fg_offset,
-                        style,
-                    )
-                    .draw(self.display)
-                    .ok();
+                    Text::new(cell.symbol(), position + self.fg_offset, style)
+                        .draw(self.display)
+                        .ok();
                 }
                 Ok(())
             }
@@ -233,8 +226,8 @@ impl_for_color!(Bgr666);
 impl_for_color!(Rgb888);
 impl_for_color!(Bgr888);
 
-pub use ratatui;
 pub use embedded_graphics;
+pub use ratatui;
 
 #[cfg(test)]
 mod tests {
