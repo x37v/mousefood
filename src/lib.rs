@@ -8,6 +8,7 @@ use ratatui::backend::{Backend, WindowSize};
 use ratatui::buffer::Cell;
 use ratatui::layout::{Position, Size};
 use ratatui::prelude::Color;
+use std::io;
 
 enum TermColorType {
     Foreground,
@@ -53,6 +54,17 @@ where
             },
             pixels,
         }
+    }
+}
+
+#[derive(Debug)]
+struct DrawError;
+
+impl std::error::Error for DrawError {}
+
+impl std::fmt::Display for DrawError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "writing to display failed")
     }
 }
 
@@ -144,7 +156,7 @@ macro_rules! impl_for_color {
         where
             D: DrawTarget<Color = $color_type>,
         {
-            fn draw<'a, I>(&mut self, content: I) -> std::io::Result<()>
+            fn draw<'a, I>(&mut self, content: I) -> io::Result<()>
             where
                 I: Iterator<Item = (u16, u16, &'a Cell)>,
             {
@@ -158,29 +170,29 @@ macro_rules! impl_for_color {
                     let bg: $color_type = TermColor(cell.bg, TermColorType::Background).into();
                     Rectangle::new(position + self.bg_offset, self.font.character_size)
                         .draw_styled(&PrimitiveStyle::with_fill(bg), self.display)
-                        .ok();
+                        .map_err(|_| io::Error::new(io::ErrorKind::Other, DrawError))?;
 
                     // Foreground
                     let fg: $color_type = TermColor(cell.fg, TermColorType::Foreground).into();
                     let style = MonoTextStyle::new(&self.font, fg);
                     Text::new(cell.symbol(), position + self.fg_offset, style)
                         .draw(self.display)
-                        .ok();
+                        .map_err(|_| io::Error::new(io::ErrorKind::Other, DrawError))?;
                 }
                 Ok(())
             }
 
-            fn hide_cursor(&mut self) -> std::io::Result<()> {
+            fn hide_cursor(&mut self) -> io::Result<()> {
                 // TODO
                 Ok(())
             }
 
-            fn show_cursor(&mut self) -> std::io::Result<()> {
+            fn show_cursor(&mut self) -> io::Result<()> {
                 // TODO
                 Ok(())
             }
 
-            fn get_cursor_position(&mut self) -> std::io::Result<Position> {
+            fn get_cursor_position(&mut self) -> io::Result<Position> {
                 // TODO
                 Ok(Position::new(0, 0))
             }
@@ -188,28 +200,29 @@ macro_rules! impl_for_color {
             fn set_cursor_position<P: Into<Position>>(
                 &mut self,
                 #[allow(unused_variables)] position: P,
-            ) -> std::io::Result<()> {
+            ) -> io::Result<()> {
                 // TODO
                 Ok(())
             }
 
-            fn clear(&mut self) -> std::io::Result<()> {
-                self.display.clear($color_type::BLACK).ok();
-                Ok(())
+            fn clear(&mut self) -> io::Result<()> {
+                self.display
+                    .clear($color_type::BLACK)
+                    .map_err(|_| io::Error::new(io::ErrorKind::Other, DrawError))
             }
 
-            fn size(&self) -> std::io::Result<Size> {
+            fn size(&self) -> io::Result<Size> {
                 Ok(self.columns_rows)
             }
 
-            fn window_size(&mut self) -> std::io::Result<WindowSize> {
+            fn window_size(&mut self) -> io::Result<WindowSize> {
                 Ok(WindowSize {
                     columns_rows: self.columns_rows,
                     pixels: self.pixels,
                 })
             }
 
-            fn flush(&mut self) -> std::io::Result<()> {
+            fn flush(&mut self) -> io::Result<()> {
                 // buffer is flushed after each character draw
                 Ok(())
             }
