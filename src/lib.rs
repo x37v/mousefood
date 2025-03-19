@@ -1,14 +1,36 @@
+pub mod prelude;
+
+pub use embedded_graphics;
+pub use ratatui;
+
+use prelude::*;
+
 use embedded_graphics::draw_target::DrawTarget;
-use embedded_graphics::mono_font::{MonoFont, MonoTextStyle};
-use embedded_graphics::pixelcolor::*;
-use embedded_graphics::prelude::*;
-use embedded_graphics::primitives::{PrimitiveStyle, Rectangle, StyledDrawable};
+use embedded_graphics::geometry::{self, Dimensions};
+use embedded_graphics::mono_font::{MonoFont, MonoTextStyleBuilder};
+use embedded_graphics::pixelcolor::{PixelColor, RgbColor};
 use embedded_graphics::text::Text;
-use ratatui::backend::{Backend, WindowSize};
-use ratatui::buffer::Cell;
-use ratatui::layout::{Position, Size};
-use ratatui::prelude::Color;
+use embedded_graphics::Drawable;
+
+use backend::WindowSize;
+use buffer::Cell;
+
 use std::io;
+use std::marker::PhantomData;
+
+#[cfg(feature = "simulator")]
+use embedded_graphics_simulator::{OutputSettings, SimulatorDisplay, SimulatorEvent, Window};
+
+#[cfg(feature = "fonts")]
+mod default_font {
+    pub use ibm437::IBM437_8X8_BOLD as bold;
+    pub use ibm437::IBM437_8X8_REGULAR as regular;
+}
+#[cfg(not(feature = "fonts"))]
+mod default_font {
+    pub use embedded_graphics::mono_font::ascii::FONT_4X6 as regular;
+    pub use embedded_graphics::mono_font::ascii::FONT_4X6 as bold;
+}
 
 enum TermColorType {
     Foreground,
@@ -17,43 +39,81 @@ enum TermColorType {
 
 struct TermColor(Color, TermColorType);
 
-pub struct EmbeddedBackend<'display, D: 'display, C>
+pub struct EmbeddedBackend<'display, D, C>
 where
-    D: DrawTarget<Color = C>,
+    D: DrawTarget<Color = C> + 'display,
 {
+    #[cfg(not(feature = "simulator"))]
     display: &'display mut D,
-    font: MonoFont<'static>,
+    #[cfg(feature = "simulator")]
+    display: &'display mut SimulatorDisplay<C>,
+    display_type: PhantomData<D>,
+    font_regular: MonoFont<'static>,
+    font_bold: MonoFont<'static>,
 
-    bg_offset: Point,
-    fg_offset: Point,
+    char_offset: geometry::Point,
 
     columns_rows: Size,
     pixels: Size,
+
+    #[cfg(feature = "simulator")]
+    simulator_window: Window,
 }
 
 impl<'display, D, C> EmbeddedBackend<'display, D, C>
 where
     D: DrawTarget<Color = C> + Dimensions,
+    C: PixelColor + Into<Rgb888> + From<Rgb888>,
 {
     pub fn new(
-        display: &'display mut D,
-        font: MonoFont<'static>,
+        #[cfg(not(feature = "simulator"))] display: &'display mut D,
+        #[cfg(feature = "simulator")] display: &'display mut SimulatorDisplay<C>,
+        font_regular: Option<MonoFont<'static>>,
+        font_bold: Option<MonoFont<'static>>,
     ) -> EmbeddedBackend<'display, D, C> {
         let pixels = Size {
             width: display.bounding_box().size.width as u16,
             height: display.bounding_box().size.height as u16,
         };
+        let font_regular = font_regular.unwrap_or(default_font::regular);
+        let font_bold = font_bold.unwrap_or(default_font::bold);
         Self {
             display,
-            font,
-            bg_offset: Point::new(0, (font.character_size.height - font.baseline) as i32),
-            fg_offset: Point::new(0, font.character_size.height as i32),
+            display_type: PhantomData,
+            font_regular,
+            font_bold,
+            char_offset: geometry::Point::new(0, font_regular.character_size.height as i32),
             columns_rows: Size {
-                height: pixels.height / font.character_size.height as u16,
-                width: pixels.width / font.character_size.width as u16,
+                height: pixels.height / font_regular.character_size.height as u16,
+                width: pixels.width / font_regular.character_size.width as u16,
             },
             pixels,
+            #[cfg(feature = "simulator")]
+            simulator_window: Window::new(
+                "mousefood emulator",
+                &OutputSettings {
+                    scale: 4,
+                    max_fps: 30,
+                    ..Default::default()
+                },
+            ),
         }
+    }
+
+    #[cfg(feature = "simulator")]
+    fn update_simulation(&mut self) -> io::Result<()> {
+        self.simulator_window.update(self.display);
+        if self
+            .simulator_window
+            .events()
+            .any(|e| e == SimulatorEvent::Quit)
+        {
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "simulator window closed",
+            ));
+        }
+        Ok(())
     }
 }
 
@@ -161,21 +221,28 @@ macro_rules! impl_for_color {
                 I: Iterator<Item = (u16, u16, &'a Cell)>,
             {
                 for (x, y, cell) in content {
-                    let position = Point::new(
-                        x as i32 * self.font.character_size.width as i32,
-                        y as i32 * self.font.character_size.height as i32,
+                    let position = geometry::Point::new(
+                        x as i32 * self.font_regular.character_size.width as i32,
+                        y as i32 * self.font_regular.character_size.height as i32,
                     );
+                    let mut style_builder = MonoTextStyleBuilder::new()
+                        .font(if cell.style().add_modifier.contains(Modifier::BOLD) {
+                            &self.font_bold
+                        } else {
+                            &self.font_regular
+                        })
+                        .text_color(TermColor(cell.fg, TermColorType::Foreground).into())
+                        .background_color(TermColor(cell.bg, TermColorType::Background).into());
 
-                    // Background
-                    let bg: $color_type = TermColor(cell.bg, TermColorType::Background).into();
-                    Rectangle::new(position + self.bg_offset, self.font.character_size)
-                        .draw_styled(&PrimitiveStyle::with_fill(bg), self.display)
-                        .map_err(|_| io::Error::new(io::ErrorKind::Other, DrawError))?;
+                    if cell.style().add_modifier.contains(Modifier::UNDERLINED) {
+                        style_builder = style_builder.underline();
+                    }
+                    if cell.style().add_modifier.contains(Modifier::CROSSED_OUT) {
+                        style_builder = style_builder.strikethrough();
+                    }
+                    let style = style_builder.build();
 
-                    // Foreground
-                    let fg: $color_type = TermColor(cell.fg, TermColorType::Foreground).into();
-                    let style = MonoTextStyle::new(&self.font, fg);
-                    Text::new(cell.symbol(), position + self.fg_offset, style)
+                    Text::new(cell.symbol(), position + self.char_offset, style)
                         .draw(self.display)
                         .map_err(|_| io::Error::new(io::ErrorKind::Other, DrawError))?;
                 }
@@ -223,6 +290,9 @@ macro_rules! impl_for_color {
             }
 
             fn flush(&mut self) -> io::Result<()> {
+                #[cfg(feature = "simulator")]
+                self.update_simulation()?;
+
                 // buffer is flushed after each character draw
                 Ok(())
             }
@@ -238,9 +308,6 @@ impl_for_color!(Rgb666);
 impl_for_color!(Bgr666);
 impl_for_color!(Rgb888);
 impl_for_color!(Bgr888);
-
-pub use embedded_graphics;
-pub use ratatui;
 
 #[cfg(test)]
 mod tests {
