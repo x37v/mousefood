@@ -1,6 +1,5 @@
 # ![Mousefood](assets/logo/mousefood.svg)
 
----
 **Mousefood** - [embedded-graphics](https://crates.io/crates/embedded-graphics) backend
 for [Ratatui](https://crates.io/crates/ratatui)!
 
