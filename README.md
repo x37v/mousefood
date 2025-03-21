@@ -1,12 +1,15 @@
-# Mousefood
+# ![Mousefood](assets/logo/mousefood.svg)
 
-[embedded-graphics](https://crates.io/crates/embedded-graphics) backend for [Ratatui](https://crates.io/crates/ratatui)!
+---
+**Mousefood** - [embedded-graphics](https://crates.io/crates/embedded-graphics) backend
+for [Ratatui](https://crates.io/crates/ratatui)!
 
-🚧 **Under construction** 🏗️
+[![Crate](https://img.shields.io/crates/v/mousefood?logo=rust&style=flat-square&color=ebe94f)](https://crates.io/crates/mousefood)
+[![License](https://img.shields.io/crates/l/mousefood?style=flat-square&color=8d97b3)](LICENSE)
 
-## Demo
+![demo](assets/demo.jpg)
 
-![demo.jpg](demo.jpg)
+## <div align="center"> 🚧 Under construction 🏗️ </div>
 
 ## Installation
 

@@ -1,0 +1,4 @@
+no-inline-html:
+  allowed_elements:
+    - div
+no-duplicate-heading: false
