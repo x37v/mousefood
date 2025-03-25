@@ -1,4 +1,4 @@
-pub mod framebuffer;
+mod framebuffer;
 pub mod prelude;
 
 pub use embedded_graphics;
@@ -23,14 +23,17 @@ use std::marker::PhantomData;
 use embedded_graphics_simulator::{OutputSettings, SimulatorDisplay, SimulatorEvent, Window};
 
 #[cfg(feature = "fonts")]
+pub use embedded_graphics_unicodefonts as fonts;
+
+#[cfg(feature = "fonts")]
 mod default_font {
-    pub use ibm437::IBM437_8X8_BOLD as bold;
-    pub use ibm437::IBM437_8X8_REGULAR as regular;
+    pub use embedded_graphics_unicodefonts::BASIC_6X10 as bold;
+    pub use embedded_graphics_unicodefonts::BASIC_6X10 as regular;
 }
 #[cfg(not(feature = "fonts"))]
 mod default_font {
-    pub use embedded_graphics::mono_font::ascii::FONT_4X6 as regular;
-    pub use embedded_graphics::mono_font::ascii::FONT_4X6 as bold;
+    pub use embedded_graphics::mono_font::ascii::FONT_6X10 as regular;
+    pub use embedded_graphics::mono_font::ascii::FONT_6X10 as bold;
 }
 
 enum TermColorType {
