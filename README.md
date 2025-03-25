@@ -6,7 +6,12 @@ for [Ratatui](https://crates.io/crates/ratatui)!
 [![Crate](https://img.shields.io/crates/v/mousefood?logo=rust&style=flat-square&color=ebe94f)](https://crates.io/crates/mousefood)
 [![License](https://img.shields.io/crates/l/mousefood?style=flat-square&color=8d97b3)](LICENSE)
 
+<div align="center">
+
 ![demo](assets/demo.jpg)
+![animated demo](assets/demo.gif)
+
+</div>
 
 ## <div align="center"> 🚧 Under construction 🏗️ </div>
 
