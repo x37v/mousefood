@@ -65,18 +65,16 @@ where
     D: DrawTarget<Color = C> + Dimensions,
     C: PixelColor + Into<Rgb888> + From<Rgb888>,
 {
-    pub fn new(
+    fn init(
         #[cfg(not(feature = "simulator"))] display: &'display mut D,
         #[cfg(feature = "simulator")] display: &'display mut SimulatorDisplay<C>,
-        font_regular: Option<MonoFont<'static>>,
-        font_bold: Option<MonoFont<'static>>,
+        font_regular: MonoFont<'static>,
+        font_bold: MonoFont<'static>,
     ) -> EmbeddedBackend<'display, D, C> {
         let pixels = Size {
             width: display.bounding_box().size.width as u16,
             height: display.bounding_box().size.height as u16,
         };
-        let font_regular = font_regular.unwrap_or(default_font::regular);
-        let font_bold = font_bold.unwrap_or(default_font::bold);
         Self {
             display,
             display_type: PhantomData,
@@ -98,6 +96,24 @@ where
                 },
             ),
         }
+    }
+
+    pub fn new(
+        #[cfg(not(feature = "simulator"))] display: &'display mut D,
+        #[cfg(feature = "simulator")] display: &'display mut SimulatorDisplay<C>,
+    ) -> EmbeddedBackend<'display, D, C> {
+        Self::with_font(display, None, None)
+    }
+
+    pub fn with_font(
+        #[cfg(not(feature = "simulator"))] display: &'display mut D,
+        #[cfg(feature = "simulator")] display: &'display mut SimulatorDisplay<C>,
+        font_regular: Option<MonoFont<'static>>,
+        font_bold: Option<MonoFont<'static>>,
+    ) -> EmbeddedBackend<'display, D, C> {
+        let font_regular = font_regular.unwrap_or(default_font::regular);
+        let font_bold = font_bold.unwrap_or(default_font::bold);
+        Self::init(display, font_regular, font_bold)
     }
 
     #[cfg(feature = "simulator")]

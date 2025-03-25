@@ -19,7 +19,7 @@ cargo add mousefood
 ## Usage
 
 ```rust
-let backend = mousefood::EmbeddedBackend::new(&mut display, None, None);
+let backend = mousefood::EmbeddedBackend::new(&mut display);
 let mut terminal = ratatui::Terminal::new(backend)?;
 
 loop {

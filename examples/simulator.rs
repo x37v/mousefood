@@ -8,7 +8,7 @@ use ratatui::widgets::{Block, Paragraph, Wrap};
 fn main() -> Result<(), std::io::Error> {
     let mut display = SimulatorDisplay::<Bgr565>::new(geometry::Size::new(128, 64));
     let backend: EmbeddedBackend<SimulatorDisplay<Bgr565>, Bgr565> =
-        EmbeddedBackend::new(&mut display, None, None);
+        EmbeddedBackend::new(&mut display);
     let mut terminal = Terminal::new(backend)?;
 
     loop {
