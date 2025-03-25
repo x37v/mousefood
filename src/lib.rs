@@ -1,3 +1,4 @@
+pub mod framebuffer;
 pub mod prelude;
 
 pub use embedded_graphics;
@@ -42,12 +43,16 @@ struct TermColor(Color, TermColorType);
 pub struct EmbeddedBackend<'display, D, C>
 where
     D: DrawTarget<Color = C> + 'display,
+    C: PixelColor + 'display,
 {
     #[cfg(not(feature = "simulator"))]
     display: &'display mut D,
     #[cfg(feature = "simulator")]
     display: &'display mut SimulatorDisplay<C>,
     display_type: PhantomData<D>,
+
+    buffer: framebuffer::HeapBuffer<C>,
+
     font_regular: MonoFont<'static>,
     font_bold: MonoFont<'static>,
 
@@ -63,7 +68,7 @@ where
 impl<'display, D, C> EmbeddedBackend<'display, D, C>
 where
     D: DrawTarget<Color = C> + Dimensions,
-    C: PixelColor + Into<Rgb888> + From<Rgb888>,
+    C: RgbColor + Into<Rgb888> + From<Rgb888>,
 {
     fn init(
         #[cfg(not(feature = "simulator"))] display: &'display mut D,
@@ -76,6 +81,7 @@ where
             height: display.bounding_box().size.height as u16,
         };
         Self {
+            buffer: framebuffer::HeapBuffer::new(display.bounding_box()),
             display,
             display_type: PhantomData,
             font_regular,
@@ -259,7 +265,7 @@ macro_rules! impl_for_color {
                     let style = style_builder.build();
 
                     Text::new(cell.symbol(), position + self.char_offset, style)
-                        .draw(self.display)
+                        .draw(&mut self.buffer)
                         .map_err(|_| io::Error::new(io::ErrorKind::Other, DrawError))?;
                 }
                 Ok(())
@@ -289,7 +295,7 @@ macro_rules! impl_for_color {
             }
 
             fn clear(&mut self) -> io::Result<()> {
-                self.display
+                self.buffer
                     .clear($color_type::BLACK)
                     .map_err(|_| io::Error::new(io::ErrorKind::Other, DrawError))
             }
@@ -306,10 +312,11 @@ macro_rules! impl_for_color {
             }
 
             fn flush(&mut self) -> io::Result<()> {
+                self.display
+                    .fill_contiguous(&self.display.bounding_box(), self.buffer.data.clone())
+                    .map_err(|_| io::Error::new(io::ErrorKind::Other, DrawError))?;
                 #[cfg(feature = "simulator")]
                 self.update_simulation()?;
-
-                // buffer is flushed after each character draw
                 Ok(())
             }
         }
