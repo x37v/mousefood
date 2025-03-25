@@ -45,3 +45,8 @@ git clone https://github.com/j-g00da/mousefood.git
 cd mousefood
 cargo run --example=simulator --features=simulator
 ```
+
+## License
+
+Mousefood is dual-licensed under
+[Apache 2.0](LICENSE-APACHE) and [MIT](LICENSE-MIT) terms.
