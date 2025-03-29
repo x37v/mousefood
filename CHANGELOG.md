@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [unreleased]
+## [0.1.0] - 2025-03-29
 
 ### 🚀 Features
 
@@ -43,6 +43,8 @@ All notable changes to this project will be documented in this file.
 - *(tools)* Configure markdownlint
 - *(logo)* Add project logo
 - Move changelog job to a changelog workflow
+- Run crate publish workflow manually
+- Run markdownlint ci job only for README.md
 
 ## [0.0.1] - 2025-03-18
 
