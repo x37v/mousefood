@@ -1,9 +1,9 @@
 extern crate mousefood;
 
-use embedded_graphics_simulator::SimulatorDisplay;
 use mousefood::embedded_graphics::geometry;
 use mousefood::prelude::*;
-use ratatui::widgets::{Block, Paragraph, Wrap};
+use mousefood::ratatui::widgets::{Block, Paragraph, Wrap};
+use mousefood::simulator::SimulatorDisplay;
 
 fn main() -> Result<(), std::io::Error> {
     let mut display = SimulatorDisplay::<Bgr565>::new(geometry::Size::new(128, 64));
