@@ -20,6 +20,8 @@ use std::io;
 use std::marker::PhantomData;
 
 #[cfg(feature = "simulator")]
+pub use embedded_graphics_simulator as simulator;
+#[cfg(feature = "simulator")]
 use embedded_graphics_simulator::{OutputSettings, SimulatorDisplay, SimulatorEvent, Window};
 
 #[cfg(feature = "fonts")]
