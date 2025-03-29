@@ -1,3 +1,6 @@
+#![warn(missing_docs)]
+#![doc = include_str!("../README.md")]
+
 mod framebuffer;
 pub mod prelude;
 
@@ -45,6 +48,14 @@ enum TermColorType {
 
 struct TermColor(Color, TermColorType);
 
+/// Embedded backend for Ratatui
+///
+/// # Examples
+///
+/// ```rust,no_run
+/// let backend = EmbeddedBackend::new(&mut display);
+/// let mut terminal = Terminal::new(backend).unwrap();
+/// ```
 pub struct EmbeddedBackend<'display, D, C>
 where
     D: DrawTarget<Color = C> + 'display,
@@ -109,6 +120,7 @@ where
         }
     }
 
+    /// Creates a new `EmbeddedBackend` using default fonts.
     pub fn new(
         #[cfg(not(feature = "simulator"))] display: &'display mut D,
         #[cfg(feature = "simulator")] display: &'display mut SimulatorDisplay<C>,
@@ -116,6 +128,7 @@ where
         Self::with_font(display, None, None)
     }
 
+    /// Creates a new `EmbeddedBackend` using `font_regular` and `font_bold`.
     pub fn with_font(
         #[cfg(not(feature = "simulator"))] display: &'display mut D,
         #[cfg(feature = "simulator")] display: &'display mut SimulatorDisplay<C>,
