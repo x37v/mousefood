@@ -8,6 +8,12 @@
 **Mousefood** - [embedded-graphics](https://crates.io/crates/embedded-graphics) backend
 for [Ratatui](https://crates.io/crates/ratatui)!
 
+> [!IMPORTANT]  
+> Currently works only with `std`-enabled targets,
+> such as Espressif's ESP32 MCU series.
+> Support for "bare-metal" (`no_std`) targets is planned,
+> but this would require upstream changes - discussed [here](https://github.com/ratatui/ratatui/discussions/1746).
+
 <div align="center">
 
 ![demo](https://github.com/j-g00da/mousefood/blob/599f1026d37c8d6308a6df64a234dbefaedc0c6f/assets/demo.jpg?raw=true)
@@ -101,11 +107,8 @@ to achieve high frame rate when using the `fonts` feature,
 it is recommended to use `opt-level = 3`,
 which can make the resulting binary even larger.
 
-Mousefood is hardware-agnostic, but may not work on low-end
-or ultra-low-power devices due to resource limitations.
-It is recommended to use devices with at least 1MB of flash.
-
-Mousefood was successfully tested on following MCUs:
+Mousefood is hardware-agnostic, but requires a `std`-enabled target.
+Successfully tested on:
 
 - esp32 (base model, 4MB flash)
 - esp32c6 (16MB flash)
