@@ -32,8 +32,8 @@ pub use embedded_graphics_unicodefonts as fonts;
 
 #[cfg(feature = "fonts")]
 mod default_font {
-    pub use embedded_graphics_unicodefonts::BASIC_6X10 as bold;
-    pub use embedded_graphics_unicodefonts::BASIC_6X10 as regular;
+    pub use embedded_graphics_unicodefonts::MONO_6X10 as bold;
+    pub use embedded_graphics_unicodefonts::MONO_6X10 as regular;
 }
 #[cfg(not(feature = "fonts"))]
 mod default_font {
