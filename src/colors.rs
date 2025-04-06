@@ -69,3 +69,63 @@ macro_rules! impl_from_term_color {
 }
 
 for_all_colors!(impl_from_term_color);
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use paste::paste;
+    use rstest::rstest;
+    use Color::*;
+    use TermColorType::*;
+
+    macro_rules! into_eg_color {
+        ($color_type:ident) => {
+            paste! {
+                #[rstest]
+                #[case(Foreground, Reset, $color_type::WHITE)]
+                #[case(Background, Reset, $color_type::BLACK)]
+                #[case(Foreground, White, $color_type::WHITE)]
+                #[case(Background, White, $color_type::WHITE)]
+                #[case(Foreground, Black, $color_type::BLACK)]
+                #[case(Background, Black, $color_type::BLACK)]
+                #[case(Foreground, Red, $color_type::RED)]
+                #[case(Background, Red, $color_type::RED)]
+                #[case(Foreground, Yellow, $color_type::YELLOW)]
+                #[case(Background, Yellow, $color_type::YELLOW)]
+                #[case(Foreground, Magenta, $color_type::MAGENTA)]
+                #[case(Background, Magenta, $color_type::MAGENTA)]
+                #[case(Foreground, Cyan, $color_type::CYAN)]
+                #[case(Background, Cyan, $color_type::CYAN)]
+                #[case(Foreground, LightRed, Rgb888::new(255, 127, 127).into())]
+                #[case(Background, LightRed, Rgb888::new(255, 127, 127).into())]
+                #[case(Foreground, LightGreen, Rgb888::new(127, 255, 127).into())]
+                #[case(Background, LightGreen, Rgb888::new(127, 255, 127).into())]
+                #[case(Foreground, LightYellow, Rgb888::new(255, 255, 127).into())]
+                #[case(Background, LightYellow, Rgb888::new(255, 255, 127).into())]
+                #[case(Foreground, LightBlue, Rgb888::new(127, 127, 255).into())]
+                #[case(Background, LightBlue, Rgb888::new(127, 127, 255).into())]
+                #[case(Foreground, LightMagenta, Rgb888::new(255, 127, 255).into())]
+                #[case(Background, LightMagenta, Rgb888::new(255, 127, 255).into())]
+                #[case(Foreground, LightCyan, Rgb888::new(127, 255, 255).into())]
+                #[case(Background, LightCyan, Rgb888::new(127, 255, 255).into())]
+                #[case(Foreground, Gray, Rgb888::new(127, 127, 127).into())]
+                #[case(Background, Gray, Rgb888::new(127, 127, 127).into())]
+                #[case(Foreground, DarkGray, Rgb888::new(170, 170, 170).into())]
+                #[case(Background, DarkGray, Rgb888::new(170, 170, 170).into())]
+                #[case(Foreground, Rgb(50, 100, 200), Rgb888::new(50, 100, 200).into())]
+                #[case(Background, Rgb(50, 100, 200), Rgb888::new(50, 100, 200).into())]
+                #[case(Foreground, Rgb(123, 23, 3), Rgb888::new(123, 23, 3).into())]
+                #[case(Background, Rgb(123, 23, 3), Rgb888::new(123, 23, 3).into())]
+                fn [<into_ $color_type:lower>] (
+                    #[case] color_type: TermColorType,
+                    #[case] color_from: Color,
+                    #[case] color_into: $color_type
+                ) {
+                    let output: $color_type = TermColor(color_from, color_type).into();
+                    assert_eq!(output, color_into);
+                }
+            }
+        };
+    }
+    for_all_colors!(into_eg_color);
+}

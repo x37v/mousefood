@@ -17,6 +17,10 @@ embedded-graphics = "0.8.1"
 embedded-graphics-simulator = { version = "0.7.0", optional = true }
 embedded-graphics-unicodefonts = { version = "0.0.3", optional = true }
 
+[dev-dependencies]
+rstest = "0.25.0"
+paste = "1.0.15"
+
 [features]
 default = ["fonts"]
 simulator = ["dep:embedded-graphics-simulator"]
