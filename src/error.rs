@@ -1,5 +1,4 @@
-use std::error;
-use std::fmt;
+use core::{error, fmt};
 
 #[derive(Debug)]
 pub struct DrawError;
