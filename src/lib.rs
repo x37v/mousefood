@@ -6,6 +6,7 @@ mod colors;
 mod default_font;
 mod error;
 mod framebuffer;
+mod macros;
 pub mod prelude;
 
 pub use backend::EmbeddedBackend;

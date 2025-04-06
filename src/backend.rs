@@ -20,6 +20,7 @@ use crate::colors::*;
 use crate::default_font;
 use crate::error::DrawError;
 use crate::framebuffer;
+use crate::macros::for_all_colors;
 
 /// Embedded backend for Ratatui
 ///
@@ -130,7 +131,7 @@ where
     }
 }
 
-macro_rules! impl_for_color {
+macro_rules! impl_backend_for_color {
     (
         $color_type:ident
     ) => {
@@ -233,11 +234,4 @@ macro_rules! impl_for_color {
     };
 }
 
-impl_for_color!(Rgb555);
-impl_for_color!(Bgr555);
-impl_for_color!(Rgb565);
-impl_for_color!(Bgr565);
-impl_for_color!(Rgb666);
-impl_for_color!(Bgr666);
-impl_for_color!(Rgb888);
-impl_for_color!(Bgr888);
+for_all_colors!(impl_backend_for_color);
