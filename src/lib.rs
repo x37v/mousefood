@@ -1,6 +1,8 @@
 #![warn(missing_docs)]
 #![doc = include_str!("../README.md")]
 
+extern crate alloc;
+
 mod backend;
 mod colors;
 mod default_font;

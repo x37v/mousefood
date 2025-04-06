@@ -1,10 +1,10 @@
+use alloc::vec::IntoIter;
 use embedded_graphics::draw_target::DrawTarget;
 use embedded_graphics::geometry::Dimensions;
 use embedded_graphics::pixelcolor::PixelColor;
 use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::Rectangle;
 use embedded_graphics::Pixel;
-use std::vec::IntoIter;
 
 pub(crate) struct HeapBuffer<C: PixelColor + Copy> {
     pub data: Vec<C>,

@@ -1,5 +1,5 @@
+use core::marker::PhantomData;
 use std::io;
-use std::marker::PhantomData;
 
 use embedded_graphics::draw_target::DrawTarget;
 use embedded_graphics::geometry::{self, Dimensions};
