@@ -25,3 +25,11 @@ paste = "1.0.15"
 default = ["fonts"]
 simulator = ["dep:embedded-graphics-simulator"]
 fonts = ["dep:embedded-graphics-unicodefonts"]
+
+[lints.rust]
+missing_docs = "warn"
+
+[lints.clippy]
+std_instead_of_core = "warn"
+std_instead_of_alloc = "warn"
+alloc_instead_of_core = "warn"
