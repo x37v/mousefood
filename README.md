@@ -12,7 +12,7 @@ for [Ratatui](https://crates.io/crates/ratatui)!
 > Currently works only with `std`-enabled targets,
 > such as Espressif's ESP32 MCU series.
 > Support for "bare-metal" (`no_std`) targets is planned,
-> but this would require upstream changes - discussed [here](https://github.com/ratatui/ratatui/discussions/1746).
+> but it requires upstream changes - [ratatui #1750](https://github.com/ratatui/ratatui/issues/1750).
 
 <div align="center">
 
