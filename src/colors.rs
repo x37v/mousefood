@@ -1,6 +1,6 @@
-use crate::macros::for_all_colors;
+use crate::macros::for_all_rgb_colors;
 use embedded_graphics::pixelcolor::{
-    Bgr555, Bgr565, Bgr666, Bgr888, Rgb555, Rgb565, Rgb666, Rgb888, RgbColor,
+    Bgr555, Bgr565, Bgr666, Bgr888, BinaryColor, Rgb555, Rgb565, Rgb666, Rgb888, RgbColor,
 };
 use ratatui::style::Color;
 
@@ -68,7 +68,44 @@ macro_rules! impl_from_term_color {
     };
 }
 
-for_all_colors!(impl_from_term_color);
+for_all_rgb_colors!(impl_from_term_color);
+
+impl From<TermColor> for BinaryColor {
+    fn from(color: TermColor) -> Self {
+        match color.0 {
+            Color::Black => BinaryColor::Off,
+            Color::White => BinaryColor::On,
+            // Fallback
+            _ => match color.1 {
+                TermColorType::Foreground => BinaryColor::Off,
+                TermColorType::Background => BinaryColor::On,
+            },
+        }
+    }
+}
+
+#[cfg(feature = "epd-weact")]
+impl From<TermColor> for weact_studio_epd::Color {
+    fn from(color: TermColor) -> Self {
+        BinaryColor::from(color).into()
+    }
+}
+
+#[cfg(feature = "epd-weact")]
+impl From<TermColor> for weact_studio_epd::TriColor {
+    fn from(color: TermColor) -> Self {
+        match color.0 {
+            Color::White => weact_studio_epd::TriColor::White,
+            Color::Black => weact_studio_epd::TriColor::Black,
+            Color::Red => weact_studio_epd::TriColor::Red,
+            // Fallback
+            _ => match color.1 {
+                TermColorType::Foreground => weact_studio_epd::TriColor::Black,
+                TermColorType::Background => weact_studio_epd::TriColor::White,
+            },
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -127,5 +164,51 @@ mod tests {
             }
         };
     }
-    for_all_colors!(into_eg_color);
+    for_all_rgb_colors!(into_eg_color);
+
+    #[rstest]
+    #[case(Foreground, Black, BinaryColor::Off)]
+    #[case(Background, Black, BinaryColor::Off)]
+    #[case(Foreground, White, BinaryColor::On)]
+    #[case(Background, White, BinaryColor::On)]
+    fn into_binary_color(
+        #[case] color_type: TermColorType,
+        #[case] color_from: Color,
+        #[case] color_into: BinaryColor,
+    ) {
+        let output: BinaryColor = TermColor(color_from, color_type).into();
+        assert_eq!(output, color_into);
+    }
+
+    #[cfg(feature = "epd-weact")]
+    #[rstest]
+    #[case(Foreground, Black, weact_studio_epd::Color::Black)]
+    #[case(Background, Black, weact_studio_epd::Color::Black)]
+    #[case(Foreground, White, weact_studio_epd::Color::White)]
+    #[case(Background, White, weact_studio_epd::Color::White)]
+    fn into_weact_color(
+        #[case] color_type: TermColorType,
+        #[case] color_from: Color,
+        #[case] color_into: weact_studio_epd::Color,
+    ) {
+        let output: weact_studio_epd::Color = TermColor(color_from, color_type).into();
+        assert_eq!(output, color_into);
+    }
+
+    #[cfg(feature = "epd-weact")]
+    #[rstest]
+    #[case(Foreground, Black, weact_studio_epd::TriColor::Black)]
+    #[case(Background, Black, weact_studio_epd::TriColor::Black)]
+    #[case(Foreground, White, weact_studio_epd::TriColor::White)]
+    #[case(Background, White, weact_studio_epd::TriColor::White)]
+    #[case(Foreground, Red, weact_studio_epd::TriColor::Red)]
+    #[case(Background, Red, weact_studio_epd::TriColor::Red)]
+    fn into_weact_tricolor(
+        #[case] color_type: TermColorType,
+        #[case] color_from: Color,
+        #[case] color_into: weact_studio_epd::TriColor,
+    ) {
+        let output: weact_studio_epd::TriColor = TermColor(color_from, color_type).into();
+        assert_eq!(output, color_into);
+    }
 }

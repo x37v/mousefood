@@ -1,4 +1,4 @@
-macro_rules! for_all_colors {
+macro_rules! for_all_rgb_colors {
     (
         $inner:ident
     ) => {
@@ -13,4 +13,4 @@ macro_rules! for_all_colors {
     };
 }
 
-pub(crate) use for_all_colors;
+pub(crate) use for_all_rgb_colors;
