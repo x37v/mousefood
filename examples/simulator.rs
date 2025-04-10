@@ -1,3 +1,5 @@
+//! Example using a simulator.
+
 extern crate mousefood;
 
 use mousefood::embedded_graphics::geometry;
@@ -7,7 +9,8 @@ use mousefood::simulator::SimulatorDisplay;
 
 fn main() -> Result<(), std::io::Error> {
     let mut display = SimulatorDisplay::<Bgr565>::new(geometry::Size::new(128, 64));
-    let backend: EmbeddedBackend<SimulatorDisplay<_>, _> = EmbeddedBackend::new(&mut display);
+    let backend: EmbeddedBackend<SimulatorDisplay<_>, _> =
+        EmbeddedBackend::new(&mut display, EmbeddedBackendConfig::default());
     let mut terminal = Terminal::new(backend)?;
 
     loop {

@@ -1,13 +1,14 @@
 use core::marker::PhantomData;
 use std::io;
 
+use crate::colors::*;
+use crate::default_font;
+use crate::error::DrawError;
+use crate::framebuffer;
 use embedded_graphics::draw_target::DrawTarget;
 use embedded_graphics::geometry::{self, Dimensions};
 use embedded_graphics::mono_font::{MonoFont, MonoTextStyleBuilder};
-use embedded_graphics::pixelcolor::{
-    Bgr555, Bgr565, Bgr666, Bgr888, Rgb555, Rgb565, Rgb666, Rgb888,
-};
-use embedded_graphics::pixelcolor::{PixelColor, RgbColor};
+use embedded_graphics::pixelcolor::{PixelColor, Rgb888};
 use embedded_graphics::text::Text;
 use embedded_graphics::Drawable;
 #[cfg(feature = "simulator")]
@@ -16,18 +17,42 @@ use ratatui::backend::Backend;
 use ratatui::layout;
 use ratatui::style;
 
-use crate::colors::*;
-use crate::default_font;
-use crate::error::DrawError;
-use crate::framebuffer;
-use crate::macros::for_all_colors;
+/// Embedded backend configuration.
+pub struct EmbeddedBackendConfig<D, C>
+where
+    D: DrawTarget<Color = C>,
+    C: PixelColor,
+{
+    /// Callback fired after each buffer flush.
+    pub flush_callback: Box<dyn FnMut(&mut D)>,
+    /// Regular font.
+    pub font_regular: MonoFont<'static>,
+    /// Bold font.
+    pub font_bold: MonoFont<'static>,
+}
 
-/// Embedded backend for Ratatui
+impl<D, C> Default for EmbeddedBackendConfig<D, C>
+where
+    D: DrawTarget<Color = C>,
+    C: PixelColor,
+{
+    fn default() -> Self {
+        Self {
+            flush_callback: Box::new(|_| {}),
+            font_regular: default_font::regular,
+            font_bold: default_font::bold,
+        }
+    }
+}
+
+/// Embedded backend for Ratatui.
 ///
 /// # Examples
 ///
 /// ```rust,no_run
-/// let backend = EmbeddedBackend::new(&mut display);
+/// use mousefood::prelude::*;
+///
+/// let backend = EmbeddedBackend::new(&mut display, EmbeddedBackendConfig::default());
 /// let mut terminal = Terminal::new(backend).unwrap();
 /// ```
 pub struct EmbeddedBackend<'display, D, C>
@@ -40,6 +65,11 @@ where
     #[cfg(feature = "simulator")]
     display: &'display mut SimulatorDisplay<C>,
     display_type: PhantomData<D>,
+
+    #[cfg(not(feature = "simulator"))]
+    flush_callback: Box<dyn FnMut(&mut D)>,
+    #[cfg(feature = "simulator")]
+    flush_callback: Box<dyn FnMut(&mut SimulatorDisplay<C>)>,
 
     buffer: framebuffer::HeapBuffer<C>,
 
@@ -57,12 +87,14 @@ where
 
 impl<'display, D, C> EmbeddedBackend<'display, D, C>
 where
-    D: DrawTarget<Color = C> + Dimensions,
-    C: RgbColor + Into<Rgb888> + From<Rgb888>,
+    D: DrawTarget<Color = C> + Dimensions + 'static,
+    C: PixelColor + Into<Rgb888> + From<Rgb888> + From<TermColor> + 'static,
 {
     fn init(
         #[cfg(not(feature = "simulator"))] display: &'display mut D,
         #[cfg(feature = "simulator")] display: &'display mut SimulatorDisplay<C>,
+        #[cfg(not(feature = "simulator"))] flush_callback: impl FnMut(&mut D) + 'static,
+        #[cfg(feature = "simulator")] flush_callback: impl FnMut(&mut SimulatorDisplay<C>) + 'static,
         font_regular: MonoFont<'static>,
         font_bold: MonoFont<'static>,
     ) -> EmbeddedBackend<'display, D, C> {
@@ -74,6 +106,7 @@ where
             buffer: framebuffer::HeapBuffer::new(display.bounding_box()),
             display,
             display_type: PhantomData,
+            flush_callback: Box::new(flush_callback),
             font_regular,
             font_bold,
             char_offset: geometry::Point::new(0, font_regular.character_size.height as i32),
@@ -98,20 +131,15 @@ where
     pub fn new(
         #[cfg(not(feature = "simulator"))] display: &'display mut D,
         #[cfg(feature = "simulator")] display: &'display mut SimulatorDisplay<C>,
+        #[cfg(not(feature = "simulator"))] config: EmbeddedBackendConfig<D, C>,
+        #[cfg(feature = "simulator")] config: EmbeddedBackendConfig<SimulatorDisplay<C>, C>,
     ) -> EmbeddedBackend<'display, D, C> {
-        Self::with_font(display, None, None)
-    }
-
-    /// Creates a new `EmbeddedBackend` using `font_regular` and `font_bold`.
-    pub fn with_font(
-        #[cfg(not(feature = "simulator"))] display: &'display mut D,
-        #[cfg(feature = "simulator")] display: &'display mut SimulatorDisplay<C>,
-        font_regular: Option<MonoFont<'static>>,
-        font_bold: Option<MonoFont<'static>>,
-    ) -> EmbeddedBackend<'display, D, C> {
-        let font_regular = font_regular.unwrap_or(default_font::regular);
-        let font_bold = font_bold.unwrap_or(default_font::bold);
-        Self::init(display, font_regular, font_bold)
+        Self::init(
+            display,
+            config.flush_callback,
+            config.font_regular,
+            config.font_bold,
+        )
     }
 
     #[cfg(feature = "simulator")]
@@ -131,107 +159,101 @@ where
     }
 }
 
-macro_rules! impl_backend_for_color {
-    (
-        $color_type:ident
-    ) => {
-        impl<D> Backend for EmbeddedBackend<'_, D, $color_type>
-        where
-            D: DrawTarget<Color = $color_type>,
-        {
-            fn draw<'a, I>(&mut self, content: I) -> io::Result<()>
-            where
-                I: Iterator<Item = (u16, u16, &'a ratatui::buffer::Cell)>,
+impl<D, C> Backend for EmbeddedBackend<'_, D, C>
+where
+    D: DrawTarget<Color = C> + 'static,
+    C: PixelColor + Into<Rgb888> + From<Rgb888> + From<TermColor> + 'static,
+{
+    fn draw<'a, I>(&mut self, content: I) -> io::Result<()>
+    where
+        I: Iterator<Item = (u16, u16, &'a ratatui::buffer::Cell)>,
+    {
+        for (x, y, cell) in content {
+            let position = geometry::Point::new(
+                x as i32 * self.font_regular.character_size.width as i32,
+                y as i32 * self.font_regular.character_size.height as i32,
+            );
+            let mut style_builder = MonoTextStyleBuilder::new()
+                .font(
+                    if cell.style().add_modifier.contains(style::Modifier::BOLD) {
+                        &self.font_bold
+                    } else {
+                        &self.font_regular
+                    },
+                )
+                .text_color(TermColor(cell.fg, TermColorType::Foreground).into())
+                .background_color(TermColor(cell.bg, TermColorType::Background).into());
+
+            if cell
+                .style()
+                .add_modifier
+                .contains(style::Modifier::UNDERLINED)
             {
-                for (x, y, cell) in content {
-                    let position = geometry::Point::new(
-                        x as i32 * self.font_regular.character_size.width as i32,
-                        y as i32 * self.font_regular.character_size.height as i32,
-                    );
-                    let mut style_builder = MonoTextStyleBuilder::new()
-                        .font(
-                            if cell.style().add_modifier.contains(style::Modifier::BOLD) {
-                                &self.font_bold
-                            } else {
-                                &self.font_regular
-                            },
-                        )
-                        .text_color(TermColor(cell.fg, TermColorType::Foreground).into())
-                        .background_color(TermColor(cell.bg, TermColorType::Background).into());
-
-                    if cell
-                        .style()
-                        .add_modifier
-                        .contains(style::Modifier::UNDERLINED)
-                    {
-                        style_builder = style_builder.underline();
-                    }
-                    if cell
-                        .style()
-                        .add_modifier
-                        .contains(style::Modifier::CROSSED_OUT)
-                    {
-                        style_builder = style_builder.strikethrough();
-                    }
-                    let style = style_builder.build();
-
-                    Text::new(cell.symbol(), position + self.char_offset, style)
-                        .draw(&mut self.buffer)
-                        .map_err(|_| io::Error::new(io::ErrorKind::Other, DrawError))?;
-                }
-                Ok(())
+                style_builder = style_builder.underline();
             }
-
-            fn hide_cursor(&mut self) -> io::Result<()> {
-                // TODO
-                Ok(())
+            if cell
+                .style()
+                .add_modifier
+                .contains(style::Modifier::CROSSED_OUT)
+            {
+                style_builder = style_builder.strikethrough();
             }
+            let style = style_builder.build();
 
-            fn show_cursor(&mut self) -> io::Result<()> {
-                // TODO
-                Ok(())
-            }
-
-            fn get_cursor_position(&mut self) -> io::Result<layout::Position> {
-                // TODO
-                Ok(layout::Position::new(0, 0))
-            }
-
-            fn set_cursor_position<P: Into<layout::Position>>(
-                &mut self,
-                #[allow(unused_variables)] position: P,
-            ) -> io::Result<()> {
-                // TODO
-                Ok(())
-            }
-
-            fn clear(&mut self) -> io::Result<()> {
-                self.buffer
-                    .clear($color_type::BLACK)
-                    .map_err(|_| io::Error::new(io::ErrorKind::Other, DrawError))
-            }
-
-            fn size(&self) -> io::Result<layout::Size> {
-                Ok(self.columns_rows)
-            }
-
-            fn window_size(&mut self) -> io::Result<ratatui::backend::WindowSize> {
-                Ok(ratatui::backend::WindowSize {
-                    columns_rows: self.columns_rows,
-                    pixels: self.pixels,
-                })
-            }
-
-            fn flush(&mut self) -> io::Result<()> {
-                self.display
-                    .fill_contiguous(&self.display.bounding_box(), self.buffer.data.clone())
-                    .map_err(|_| io::Error::new(io::ErrorKind::Other, DrawError))?;
-                #[cfg(feature = "simulator")]
-                self.update_simulation()?;
-                Ok(())
-            }
+            Text::new(cell.symbol(), position + self.char_offset, style)
+                .draw(&mut self.buffer)
+                .map_err(|_| io::Error::new(io::ErrorKind::Other, DrawError))?;
         }
-    };
-}
+        Ok(())
+    }
 
-for_all_colors!(impl_backend_for_color);
+    fn hide_cursor(&mut self) -> io::Result<()> {
+        // TODO
+        Ok(())
+    }
+
+    fn show_cursor(&mut self) -> io::Result<()> {
+        // TODO
+        Ok(())
+    }
+
+    fn get_cursor_position(&mut self) -> io::Result<layout::Position> {
+        // TODO
+        Ok(layout::Position::new(0, 0))
+    }
+
+    fn set_cursor_position<P: Into<layout::Position>>(
+        &mut self,
+        #[allow(unused_variables)] position: P,
+    ) -> io::Result<()> {
+        // TODO
+        Ok(())
+    }
+
+    fn clear(&mut self) -> io::Result<()> {
+        self.buffer
+            .clear(TermColor(ratatui::style::Color::Reset, TermColorType::Background).into())
+            .map_err(|_| io::Error::new(io::ErrorKind::Other, DrawError))
+    }
+
+    fn size(&self) -> io::Result<layout::Size> {
+        Ok(self.columns_rows)
+    }
+
+    fn window_size(&mut self) -> io::Result<ratatui::backend::WindowSize> {
+        Ok(ratatui::backend::WindowSize {
+            columns_rows: self.columns_rows,
+            pixels: self.pixels,
+        })
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.display
+            .fill_contiguous(&self.display.bounding_box(), self.buffer.data.clone())
+            .map_err(|_| io::Error::new(io::ErrorKind::Other, DrawError))?;
+        (self.flush_callback)(self.display);
+        #[cfg(feature = "simulator")]
+        self.update_simulation()?;
+        Ok(())
+    }
+}
