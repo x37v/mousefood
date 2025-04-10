@@ -1,3 +1,5 @@
+//! Example using a simulator.
+
 extern crate mousefood;
 
 use mousefood::embedded_graphics::geometry;
