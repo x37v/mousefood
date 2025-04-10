@@ -100,6 +100,40 @@ fn main() -> Result<(), std::io::Error> {
 }
 ```
 
+### EPD support
+
+<div align="center">
+
+![WeAct epd demo](https://github.com/j-g00da/mousefood/blob/fa70cdd46567a51895caf10c44fff4104602e880/assets/epd-weact.jpg?raw=true)
+
+</div>
+
+Support for EPD (e-ink displays) produced by WeAct Studio
+(`weact-studio-epd` driver) can be enabled using `epd-weact` feature.
+This driver requires some additional configuration:
+
+```rust
+use mousefood::prelude::*;
+use weact_studio_epd::graphics::Display290BlackWhite;
+use weact_studio_epd::WeActStudio290BlackWhiteDriver;
+
+// Configure SPI
+// (...)
+
+let mut driver = WeActStudio290BlackWhiteDriver::new(spi_interface, busy, rst, delay);
+let mut display = Display290BlackWhite::new();
+
+driver.init().unwrap();
+
+let config = EmbeddedBackendConfig {
+    flush_callback: Box::new(move |d| { driver.full_update(d).unwrap(); }),
+    ..Default::default()
+};
+let backend = EmbeddedBackend::new(&mut display, config);
+```
+
+Support for `epd_waveshare` driver is planned in the future.
+
 ## Performance and hardware support
 
 Flash memory on most embedded devices is very limited. Additionally,
