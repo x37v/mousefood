@@ -10,7 +10,7 @@ mod framebuffer;
 mod macros;
 pub mod prelude;
 
-pub use backend::EmbeddedBackend;
+pub use backend::{EmbeddedBackend, EmbeddedBackendConfig};
 pub use embedded_graphics;
 pub use ratatui;
 

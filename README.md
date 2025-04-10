@@ -38,7 +38,7 @@ fn main() -> Result<(), std::io::Error> {
     // Any embedded_graphics DrawTarget
     let mut display = MyDrawTarget::new();
     
-    let backend = EmbeddedBackend::new(&mut display);
+    let backend = EmbeddedBackend::new(&mut display, EmbeddedBackendConfig::default());
     let mut terminal = Terminal::new(backend)?;
 
     loop {
