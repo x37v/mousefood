@@ -18,16 +18,27 @@ use ratatui::layout;
 use ratatui::style;
 
 /// Embedded backend configuration.
-pub struct EmbeddedBackendConfig {
+pub struct EmbeddedBackendConfig<D, C>
+where
+    D: DrawTarget<Color = C>,
+    C: PixelColor,
+{
+    /// Callback fired after each buffer flush.
+    pub flush_callback: Box<dyn FnMut(&mut D)>,
     /// Regular font.
     pub font_regular: MonoFont<'static>,
     /// Bold font.
     pub font_bold: MonoFont<'static>,
 }
 
-impl Default for EmbeddedBackendConfig {
+impl<D, C> Default for EmbeddedBackendConfig<D, C>
+where
+    D: DrawTarget<Color = C>,
+    C: PixelColor,
+{
     fn default() -> Self {
         Self {
+            flush_callback: Box::new(|_| {}),
             font_regular: default_font::regular,
             font_bold: default_font::bold,
         }
@@ -55,6 +66,11 @@ where
     display: &'display mut SimulatorDisplay<C>,
     display_type: PhantomData<D>,
 
+    #[cfg(not(feature = "simulator"))]
+    flush_callback: Box<dyn FnMut(&mut D)>,
+    #[cfg(feature = "simulator")]
+    flush_callback: Box<dyn FnMut(&mut SimulatorDisplay<C>)>,
+
     buffer: framebuffer::HeapBuffer<C>,
 
     font_regular: MonoFont<'static>,
@@ -77,6 +93,8 @@ where
     fn init(
         #[cfg(not(feature = "simulator"))] display: &'display mut D,
         #[cfg(feature = "simulator")] display: &'display mut SimulatorDisplay<C>,
+        #[cfg(not(feature = "simulator"))] flush_callback: impl FnMut(&mut D) + 'static,
+        #[cfg(feature = "simulator")] flush_callback: impl FnMut(&mut SimulatorDisplay<C>) + 'static,
         font_regular: MonoFont<'static>,
         font_bold: MonoFont<'static>,
     ) -> EmbeddedBackend<'display, D, C> {
@@ -88,6 +106,7 @@ where
             buffer: framebuffer::HeapBuffer::new(display.bounding_box()),
             display,
             display_type: PhantomData,
+            flush_callback: Box::new(flush_callback),
             font_regular,
             font_bold,
             char_offset: geometry::Point::new(0, font_regular.character_size.height as i32),
@@ -112,9 +131,15 @@ where
     pub fn new(
         #[cfg(not(feature = "simulator"))] display: &'display mut D,
         #[cfg(feature = "simulator")] display: &'display mut SimulatorDisplay<C>,
-        config: EmbeddedBackendConfig,
+        #[cfg(not(feature = "simulator"))] config: EmbeddedBackendConfig<D, C>,
+        #[cfg(feature = "simulator")] config: EmbeddedBackendConfig<SimulatorDisplay<C>, C>,
     ) -> EmbeddedBackend<'display, D, C> {
-        Self::init(display, config.font_regular, config.font_bold)
+        Self::init(
+            display,
+            config.flush_callback,
+            config.font_regular,
+            config.font_bold,
+        )
     }
 
     #[cfg(feature = "simulator")]
@@ -226,6 +251,7 @@ where
         self.display
             .fill_contiguous(&self.display.bounding_box(), self.buffer.data.clone())
             .map_err(|_| io::Error::new(io::ErrorKind::Other, DrawError))?;
+        (self.flush_callback)(self.display);
         #[cfg(feature = "simulator")]
         self.update_simulation()?;
         Ok(())
