@@ -173,36 +173,34 @@ where
                 x as i32 * self.font_regular.character_size.width as i32,
                 y as i32 * self.font_regular.character_size.height as i32,
             );
+
             let mut style_builder = MonoTextStyleBuilder::new()
-                .font(
-                    if cell.style().add_modifier.contains(style::Modifier::BOLD) {
-                        &self.font_bold
-                    } else {
-                        &self.font_regular
-                    },
-                )
+                .font(&self.font_regular)
                 .text_color(TermColor(cell.fg, TermColorType::Foreground).into())
                 .background_color(TermColor(cell.bg, TermColorType::Background).into());
 
-            if cell
-                .style()
-                .add_modifier
-                .contains(style::Modifier::UNDERLINED)
-            {
-                style_builder = style_builder.underline();
+            for modifier in cell.style().add_modifier.iter() {
+                style_builder = match modifier {
+                    style::Modifier::BOLD => style_builder.font(&self.font_bold),
+                    style::Modifier::DIM => style_builder, // TODO
+                    style::Modifier::ITALIC => style_builder, // TODO
+                    style::Modifier::UNDERLINED => style_builder.underline(),
+                    style::Modifier::SLOW_BLINK => style_builder, // TODO
+                    style::Modifier::RAPID_BLINK => style_builder, // TODO
+                    style::Modifier::REVERSED => style_builder,   // TODO
+                    style::Modifier::HIDDEN => style_builder,     // TODO
+                    style::Modifier::CROSSED_OUT => style_builder.strikethrough(),
+                    _ => style_builder,
+                }
             }
-            if cell
-                .style()
-                .add_modifier
-                .contains(style::Modifier::CROSSED_OUT)
-            {
-                style_builder = style_builder.strikethrough();
-            }
-            let style = style_builder.build();
 
-            Text::new(cell.symbol(), position + self.char_offset, style)
-                .draw(&mut self.buffer)
-                .map_err(|_| io::Error::new(io::ErrorKind::Other, DrawError))?;
+            Text::new(
+                cell.symbol(),
+                position + self.char_offset,
+                style_builder.build(),
+            )
+            .draw(&mut self.buffer)
+            .map_err(|_| io::Error::new(io::ErrorKind::Other, DrawError))?;
         }
         Ok(())
     }
