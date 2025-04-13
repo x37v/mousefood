@@ -247,7 +247,7 @@ where
 
     fn flush(&mut self) -> io::Result<()> {
         self.display
-            .fill_contiguous(&self.display.bounding_box(), self.buffer.data.clone())
+            .fill_contiguous(&self.display.bounding_box(), &self.buffer)
             .map_err(|_| io::Error::new(io::ErrorKind::Other, DrawError))?;
         (self.flush_callback)(self.display);
         #[cfg(feature = "simulator")]
