@@ -65,3 +65,17 @@ jobs:
         uses: clechasseur/rs-clippy-check@v4
       - name: Cache Cargo dependencies
         uses: Swatinem/rust-cache@v2
+
+  test:
+    runs-on: ubuntu-latest
+    name: Run tests
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Run lib tests
+        run: cargo test --locked --lib --features epd-weact
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
