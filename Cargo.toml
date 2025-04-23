@@ -28,6 +28,10 @@ simulator = ["dep:embedded-graphics-simulator"]
 fonts = ["dep:embedded-graphics-unicodefonts"]
 epd-weact = ["dep:weact-studio-epd"]
 
+[[example]]
+name = "simulator"
+required-features = ["simulator"]
+
 [lints.rust]
 missing_docs = "warn"
 
