@@ -28,7 +28,7 @@ where
     /// Regular font.
     pub font_regular: MonoFont<'static>,
     /// Bold font.
-    pub font_bold: MonoFont<'static>,
+    pub font_bold: Option<MonoFont<'static>>,
 }
 
 impl<D, C> Default for EmbeddedBackendConfig<D, C>
@@ -40,7 +40,7 @@ where
         Self {
             flush_callback: Box::new(|_| {}),
             font_regular: default_font::regular,
-            font_bold: default_font::bold,
+            font_bold: None,
         }
     }
 }
@@ -74,7 +74,7 @@ where
     buffer: framebuffer::HeapBuffer<C>,
 
     font_regular: MonoFont<'static>,
-    font_bold: MonoFont<'static>,
+    font_bold: Option<MonoFont<'static>>,
 
     char_offset: geometry::Point,
 
@@ -96,7 +96,7 @@ where
         #[cfg(not(feature = "simulator"))] flush_callback: impl FnMut(&mut D) + 'static,
         #[cfg(feature = "simulator")] flush_callback: impl FnMut(&mut SimulatorDisplay<C>) + 'static,
         font_regular: MonoFont<'static>,
-        font_bold: MonoFont<'static>,
+        font_bold: Option<MonoFont<'static>>,
     ) -> EmbeddedBackend<'display, D, C> {
         let pixels = layout::Size {
             width: display.bounding_box().size.width as u16,
@@ -181,7 +181,10 @@ where
 
             for modifier in cell.style().add_modifier.iter() {
                 style_builder = match modifier {
-                    style::Modifier::BOLD => style_builder.font(&self.font_bold),
+                    style::Modifier::BOLD => match &self.font_bold {
+                        None => style_builder.font(&self.font_regular),
+                        Some(font) => style_builder.font(font),
+                    },
                     style::Modifier::DIM => style_builder, // TODO
                     style::Modifier::ITALIC => style_builder, // TODO
                     style::Modifier::UNDERLINED => style_builder.underline(),
