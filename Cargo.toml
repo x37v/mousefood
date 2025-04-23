@@ -9,7 +9,7 @@ homepage = "https://github.com/j-g00da/mousefood"
 repository = "https://github.com/j-g00da/mousefood"
 keywords = ["embedded-graphics", "ratatui", "tui"]
 categories = ["embedded"]
-exclude=["/.idea/", "/.github/"]
+exclude=["/.github", "/assets"]
 
 [dependencies]
 ratatui = { version = "0.29", default-features = false, features = ["all-widgets"] }
