@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.1] - 2025-04-23
+
+### 🚜 Refactor
+
+- *(examples)* Remove unnecessary `extern crate` from simulator example
+
+### 📚 Documentation
+
+- *(readme)* Fix simulator code snippet
+
+### ⚙️ Miscellaneous Tasks
+
+- *(examples)* Configure simulator example in Cargo.toml
+- Update list of excluded paths in Cargo.toml
+
 ## [0.2.0] - 2025-04-15
 
 ### 🚀 Features
