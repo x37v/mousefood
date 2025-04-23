@@ -1,7 +1,4 @@
 //! Example using a simulator.
-
-extern crate mousefood;
-
 use mousefood::embedded_graphics::geometry;
 use mousefood::prelude::*;
 use mousefood::ratatui::widgets::{Block, Paragraph, Wrap};
