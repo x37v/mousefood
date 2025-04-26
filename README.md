@@ -65,6 +65,31 @@ the `fonts` feature can be disabled by turning off the default crate features.
 [`ibm437`](https://crates.io/crates/ibm437) is a good alternative that includes
 some drawing characters, but is not as large as embedded-graphics-unicodefonts.
 
+### Bold and italic fonts
+
+Bold and italic modifiers are supported, but this requires providing fonts
+through `EmbeddedBackendConfig`.
+If only regular font is provided, it serves as a fallback.
+All fonts must be of the same size.
+
+```rust
+use mousefood::{EmbeddedBackend, EmbeddedBackendConfig, fonts};
+
+let config = EmbeddedBackendConfig {
+    font_regular: fonts::MONO_6X13,
+    font_bold: Some(fonts::MONO_6X13_BOLD),
+    font_italic: Some(fonts::MONO_6X13_ITALIC),
+    ..Default::default()
+};
+let backend = EmbeddedBackend::new(&mut display, config);
+```
+
+<div align="center">
+<img alt="Bold and Italic fonts"
+     src="https://github.com/j-g00da/mousefood/blob/6640da9402794ea8f9370e0dc2b4bd1ebf2c6356/assets/bold_italic.png?raw=true"
+     style="max-width: 640px"/>
+</div>
+
 ### Simulator
 
 Mousefood can be run in a simulator
