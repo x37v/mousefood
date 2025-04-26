@@ -28,7 +28,9 @@ where
     /// Regular font.
     pub font_regular: MonoFont<'static>,
     /// Bold font.
-    pub font_bold: MonoFont<'static>,
+    pub font_bold: Option<MonoFont<'static>>,
+    /// Italic font.
+    pub font_italic: Option<MonoFont<'static>>,
 }
 
 impl<D, C> Default for EmbeddedBackendConfig<D, C>
@@ -40,7 +42,8 @@ where
         Self {
             flush_callback: Box::new(|_| {}),
             font_regular: default_font::regular,
-            font_bold: default_font::bold,
+            font_bold: None,
+            font_italic: None,
         }
     }
 }
@@ -74,7 +77,8 @@ where
     buffer: framebuffer::HeapBuffer<C>,
 
     font_regular: MonoFont<'static>,
-    font_bold: MonoFont<'static>,
+    font_bold: Option<MonoFont<'static>>,
+    font_italic: Option<MonoFont<'static>>,
 
     char_offset: geometry::Point,
 
@@ -96,7 +100,8 @@ where
         #[cfg(not(feature = "simulator"))] flush_callback: impl FnMut(&mut D) + 'static,
         #[cfg(feature = "simulator")] flush_callback: impl FnMut(&mut SimulatorDisplay<C>) + 'static,
         font_regular: MonoFont<'static>,
-        font_bold: MonoFont<'static>,
+        font_bold: Option<MonoFont<'static>>,
+        font_italic: Option<MonoFont<'static>>,
     ) -> EmbeddedBackend<'display, D, C> {
         let pixels = layout::Size {
             width: display.bounding_box().size.width as u16,
@@ -109,6 +114,7 @@ where
             flush_callback: Box::new(flush_callback),
             font_regular,
             font_bold,
+            font_italic,
             char_offset: geometry::Point::new(0, font_regular.character_size.height as i32),
             columns_rows: layout::Size {
                 height: pixels.height / font_regular.character_size.height as u16,
@@ -139,6 +145,7 @@ where
             config.flush_callback,
             config.font_regular,
             config.font_bold,
+            config.font_italic,
         )
     }
 
@@ -181,9 +188,15 @@ where
 
             for modifier in cell.style().add_modifier.iter() {
                 style_builder = match modifier {
-                    style::Modifier::BOLD => style_builder.font(&self.font_bold),
+                    style::Modifier::BOLD => match &self.font_bold {
+                        None => style_builder.font(&self.font_regular),
+                        Some(font) => style_builder.font(font),
+                    },
                     style::Modifier::DIM => style_builder, // TODO
-                    style::Modifier::ITALIC => style_builder, // TODO
+                    style::Modifier::ITALIC => match &self.font_italic {
+                        None => style_builder.font(&self.font_regular),
+                        Some(font) => style_builder.font(font),
+                    },
                     style::Modifier::UNDERLINED => style_builder.underline(),
                     style::Modifier::SLOW_BLINK => style_builder, // TODO
                     style::Modifier::RAPID_BLINK => style_builder, // TODO
