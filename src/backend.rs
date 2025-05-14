@@ -186,7 +186,7 @@ where
                 .text_color(TermColor(cell.fg, TermColorType::Foreground).into())
                 .background_color(TermColor(cell.bg, TermColorType::Background).into());
 
-            for modifier in cell.style().add_modifier.iter() {
+            for modifier in cell.modifier.iter() {
                 style_builder = match modifier {
                     style::Modifier::BOLD => match &self.font_bold {
                         None => style_builder.font(&self.font_regular),
