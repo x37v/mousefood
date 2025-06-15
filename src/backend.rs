@@ -213,7 +213,7 @@ where
                 style_builder.build(),
             )
             .draw(&mut self.buffer)
-            .map_err(|_| io::Error::new(io::ErrorKind::Other, DrawError))?;
+            .map_err(|_| io::Error::other(DrawError))?;
         }
         Ok(())
     }
@@ -244,7 +244,7 @@ where
     fn clear(&mut self) -> io::Result<()> {
         self.buffer
             .clear(TermColor(ratatui::style::Color::Reset, TermColorType::Background).into())
-            .map_err(|_| io::Error::new(io::ErrorKind::Other, DrawError))
+            .map_err(|_| io::Error::other(DrawError))
     }
 
     fn size(&self) -> io::Result<layout::Size> {
@@ -261,7 +261,7 @@ where
     fn flush(&mut self) -> io::Result<()> {
         self.display
             .fill_contiguous(&self.display.bounding_box(), &self.buffer)
-            .map_err(|_| io::Error::new(io::ErrorKind::Other, DrawError))?;
+            .map_err(|_| io::Error::other(DrawError))?;
         (self.flush_callback)(self.display);
         #[cfg(feature = "simulator")]
         self.update_simulation()?;
