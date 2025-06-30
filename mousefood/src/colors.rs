@@ -77,8 +77,8 @@ impl From<TermColor> for BinaryColor {
             Color::White => BinaryColor::On,
             // Fallback
             _ => match color.1 {
-                TermColorType::Foreground => BinaryColor::Off,
-                TermColorType::Background => BinaryColor::On,
+                TermColorType::Foreground => BinaryColor::On,
+                TermColorType::Background => BinaryColor::Off,
             },
         }
     }
