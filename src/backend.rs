@@ -76,8 +76,6 @@ where
     font_regular: MonoFont<'static>,
     font_bold: MonoFont<'static>,
 
-    char_offset: geometry::Point,
-
     columns_rows: layout::Size,
     pixels: layout::Size,
 
@@ -109,7 +107,6 @@ where
             flush_callback: Box::new(flush_callback),
             font_regular,
             font_bold,
-            char_offset: geometry::Point::new(0, font_regular.character_size.height as i32),
             columns_rows: layout::Size {
                 height: pixels.height / font_regular.character_size.height as u16,
                 width: pixels.width / font_regular.character_size.width as u16,
@@ -194,10 +191,11 @@ where
                 }
             }
 
-            Text::new(
+            Text::with_baseline(
                 cell.symbol(),
-                position + self.char_offset,
+                position,
                 style_builder.build(),
+                embedded_graphics::text::Baseline::Top,
             )
             .draw(&mut self.buffer)
             .map_err(|_| io::Error::new(io::ErrorKind::Other, DrawError))?;
