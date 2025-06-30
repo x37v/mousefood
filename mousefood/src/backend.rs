@@ -94,6 +94,11 @@ where
             height: display.bounding_box().size.height as u16,
         };
 
+        //make best effort to center the drawing
+        let off_x = (pixels.width % font_regular.character_size.width as u16) / 2;
+        let off_y = (pixels.height % font_regular.character_size.height as u16) / 2;
+        let char_offset = geometry::Point::new(off_x as i32, off_y as i32);
+
         Self {
             buffer: framebuffer::HeapBuffer::new(display.bounding_box()),
             display,
@@ -102,7 +107,7 @@ where
             font_regular,
             font_bold,
             font_italic,
-            char_offset: geometry::Point::new(0, 0),
+            char_offset,
             columns_rows: layout::Size {
                 height: pixels.height / font_regular.character_size.height as u16,
                 width: pixels.width / font_regular.character_size.width as u16,
