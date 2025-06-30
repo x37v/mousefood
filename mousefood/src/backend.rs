@@ -93,6 +93,7 @@ where
             width: display.bounding_box().size.width as u16,
             height: display.bounding_box().size.height as u16,
         };
+
         Self {
             buffer: framebuffer::HeapBuffer::new(display.bounding_box()),
             display,
@@ -101,7 +102,7 @@ where
             font_regular,
             font_bold,
             font_italic,
-            char_offset: geometry::Point::new(0, font_regular.character_size.height as i32),
+            char_offset: geometry::Point::new(0, 0),
             columns_rows: layout::Size {
                 height: pixels.height / font_regular.character_size.height as u16,
                 width: pixels.width / font_regular.character_size.width as u16,
@@ -176,10 +177,11 @@ where
                 );
             }
 
-            Text::new(
+            Text::with_baseline(
                 cell.symbol(),
                 position + self.char_offset,
                 style_builder.build(),
+                embedded_graphics::text::Baseline::Top,
             )
             .draw(&mut self.buffer)
             .map_err(|_| crate::error::Error::DrawError)?;
