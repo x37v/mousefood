@@ -135,7 +135,6 @@ where
         Self::new_offset(display, config, geometry::Point::new(0, 0))
     }
 
-
     /// Creates a new `EmbeddedBackend` using default fonts, centered as best as possible.
     pub fn new_centered(
         display: &'display mut D,
