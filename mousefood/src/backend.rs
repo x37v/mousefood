@@ -88,16 +88,12 @@ where
         font_regular: MonoFont<'static>,
         font_bold: Option<MonoFont<'static>>,
         font_italic: Option<MonoFont<'static>>,
+        char_offset: geometry::Point,
     ) -> EmbeddedBackend<'display, D, C> {
         let pixels = layout::Size {
             width: display.bounding_box().size.width as u16,
             height: display.bounding_box().size.height as u16,
         };
-
-        //make best effort to center the drawing
-        let off_x = (pixels.width % font_regular.character_size.width as u16) / 2;
-        let off_y = (pixels.height % font_regular.character_size.height as u16) / 2;
-        let char_offset = geometry::Point::new(off_x as i32, off_y as i32);
 
         Self {
             buffer: framebuffer::HeapBuffer::new(display.bounding_box()),
@@ -116,10 +112,10 @@ where
         }
     }
 
-    /// Creates a new `EmbeddedBackend` using default fonts.
-    pub fn new(
+    fn new_offset(
         display: &'display mut D,
         config: EmbeddedBackendConfig<D, C>,
+        char_offset: geometry::Point,
     ) -> EmbeddedBackend<'display, D, C> {
         Self::init(
             display,
@@ -127,7 +123,33 @@ where
             config.font_regular,
             config.font_bold,
             config.font_italic,
+            char_offset,
         )
+    }
+
+    /// Creates a new `EmbeddedBackend` using default fonts.
+    pub fn new(
+        display: &'display mut D,
+        config: EmbeddedBackendConfig<D, C>,
+    ) -> EmbeddedBackend<'display, D, C> {
+        Self::new_offset(display, config, geometry::Point::new(0, 0))
+    }
+
+
+    /// Creates a new `EmbeddedBackend` using default fonts, centered as best as possible.
+    pub fn new_centered(
+        display: &'display mut D,
+        config: EmbeddedBackendConfig<D, C>,
+    ) -> EmbeddedBackend<'display, D, C> {
+        //make best effort to center the drawing
+        let pixels = layout::Size {
+            width: display.bounding_box().size.width as u16,
+            height: display.bounding_box().size.height as u16,
+        };
+        let off_x = (pixels.width % config.font_regular.character_size.width as u16) / 2;
+        let off_y = (pixels.height % config.font_regular.character_size.height as u16) / 2;
+        let char_offset = geometry::Point::new(off_x as i32, off_y as i32);
+        Self::new_offset(display, config, char_offset)
     }
 }
 
