@@ -14,6 +14,13 @@ use ratatui_core::backend::{Backend, ClearType};
 use ratatui_core::layout;
 use ratatui_core::style;
 
+#[derive(Clone, Copy)]
+pub enum DisplayAlignment {
+    Start,
+    Center,
+    End,
+}
+
 /// Embedded backend configuration.
 pub struct EmbeddedBackendConfig<D, C>
 where
@@ -28,6 +35,14 @@ where
     pub font_bold: Option<MonoFont<'static>>,
     /// Italic font.
     pub font_italic: Option<MonoFont<'static>>,
+
+    /// If the display isn't a prefect multiple of the font height, how should the view be
+    /// displayed in the space given.
+    pub vertical_alignment: DisplayAlignment,
+
+    /// If the display isn't a prefect multiple of the font width, how should the view be
+    /// displayed in the space given.
+    pub horizontal_alignment: DisplayAlignment,
 }
 
 impl<D, C> Default for EmbeddedBackendConfig<D, C>
@@ -41,6 +56,8 @@ where
             font_regular: default_font::regular,
             font_bold: None,
             font_italic: None,
+            vertical_alignment: DisplayAlignment::Start,
+            horizontal_alignment: DisplayAlignment::Start,
         }
     }
 }
@@ -88,12 +105,29 @@ where
         font_regular: MonoFont<'static>,
         font_bold: Option<MonoFont<'static>>,
         font_italic: Option<MonoFont<'static>>,
-        char_offset: geometry::Point,
+        vertical_alignment: DisplayAlignment,
+        horizontal_alignment: DisplayAlignment,
     ) -> EmbeddedBackend<'display, D, C> {
         let pixels = layout::Size {
             width: display.bounding_box().size.width as u16,
             height: display.bounding_box().size.height as u16,
         };
+
+        let extra_x = pixels.width % font_regular.character_size.width as u16;
+        let extra_y = pixels.height % font_regular.character_size.height as u16;
+
+        let off_x = match horizontal_alignment {
+            DisplayAlignment::Start => 0,
+            DisplayAlignment::Center => extra_x / 2, //best effort, might be 1/2 pixel off
+            DisplayAlignment::End => extra_x,
+        } as i32;
+        let off_y = match vertical_alignment {
+            DisplayAlignment::Start => 0,
+            DisplayAlignment::Center => extra_y / 2, //best effort, might be 1/2 pixel off
+            DisplayAlignment::End => extra_y,
+        } as i32;
+
+        let char_offset = geometry::Point::new(off_x, off_y);
 
         Self {
             buffer: framebuffer::HeapBuffer::new(display.bounding_box()),
@@ -112,10 +146,10 @@ where
         }
     }
 
-    fn new_offset(
+    /// Creates a new `EmbeddedBackend` using default fonts.
+    pub fn new(
         display: &'display mut D,
         config: EmbeddedBackendConfig<D, C>,
-        char_offset: geometry::Point,
     ) -> EmbeddedBackend<'display, D, C> {
         Self::init(
             display,
@@ -123,32 +157,9 @@ where
             config.font_regular,
             config.font_bold,
             config.font_italic,
-            char_offset,
+            config.vertical_alignment,
+            config.horizontal_alignment,
         )
-    }
-
-    /// Creates a new `EmbeddedBackend` using default fonts.
-    pub fn new(
-        display: &'display mut D,
-        config: EmbeddedBackendConfig<D, C>,
-    ) -> EmbeddedBackend<'display, D, C> {
-        Self::new_offset(display, config, geometry::Point::new(0, 0))
-    }
-
-    /// Creates a new `EmbeddedBackend` using default fonts, centered as best as possible.
-    pub fn new_centered(
-        display: &'display mut D,
-        config: EmbeddedBackendConfig<D, C>,
-    ) -> EmbeddedBackend<'display, D, C> {
-        //make best effort to center the drawing
-        let pixels = layout::Size {
-            width: display.bounding_box().size.width as u16,
-            height: display.bounding_box().size.height as u16,
-        };
-        let off_x = (pixels.width % config.font_regular.character_size.width as u16) / 2;
-        let off_y = (pixels.height % config.font_regular.character_size.height as u16) / 2;
-        let char_offset = geometry::Point::new(off_x as i32, off_y as i32);
-        Self::new_offset(display, config, char_offset)
     }
 }
 
