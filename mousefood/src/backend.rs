@@ -15,7 +15,7 @@ use ratatui_core::layout;
 use ratatui_core::style;
 
 #[derive(Clone, Copy)]
-pub enum DisplayAlignment {
+pub enum TerminalAlignment {
     Start,
     Center,
     End,
@@ -38,11 +38,11 @@ where
 
     /// If the display isn't a prefect multiple of the font height, how should the view be
     /// displayed in the space given.
-    pub vertical_alignment: DisplayAlignment,
+    pub vertical_alignment: TerminalAlignment,
 
     /// If the display isn't a prefect multiple of the font width, how should the view be
     /// displayed in the space given.
-    pub horizontal_alignment: DisplayAlignment,
+    pub horizontal_alignment: TerminalAlignment,
 }
 
 impl<D, C> Default for EmbeddedBackendConfig<D, C>
@@ -56,8 +56,8 @@ where
             font_regular: default_font::regular,
             font_bold: None,
             font_italic: None,
-            vertical_alignment: DisplayAlignment::Start,
-            horizontal_alignment: DisplayAlignment::Start,
+            vertical_alignment: TerminalAlignment::Start,
+            horizontal_alignment: TerminalAlignment::Start,
         }
     }
 }
@@ -105,8 +105,8 @@ where
         font_regular: MonoFont<'static>,
         font_bold: Option<MonoFont<'static>>,
         font_italic: Option<MonoFont<'static>>,
-        vertical_alignment: DisplayAlignment,
-        horizontal_alignment: DisplayAlignment,
+        vertical_alignment: TerminalAlignment,
+        horizontal_alignment: TerminalAlignment,
     ) -> EmbeddedBackend<'display, D, C> {
         let pixels = layout::Size {
             width: display.bounding_box().size.width as u16,
@@ -117,14 +117,14 @@ where
         let extra_y = pixels.height % font_regular.character_size.height as u16;
 
         let off_x = match horizontal_alignment {
-            DisplayAlignment::Start => 0,
-            DisplayAlignment::Center => extra_x / 2, //best effort, might be 1/2 pixel off
-            DisplayAlignment::End => extra_x,
+            TerminalAlignment::Start => 0,
+            TerminalAlignment::Center => extra_x / 2, //best effort, might be 1/2 pixel off
+            TerminalAlignment::End => extra_x,
         } as i32;
         let off_y = match vertical_alignment {
-            DisplayAlignment::Start => 0,
-            DisplayAlignment::Center => extra_y / 2, //best effort, might be 1/2 pixel off
-            DisplayAlignment::End => extra_y,
+            TerminalAlignment::Start => 0,
+            TerminalAlignment::Center => extra_y / 2, //best effort, might be 1/2 pixel off
+            TerminalAlignment::End => extra_y,
         } as i32;
 
         let char_offset = geometry::Point::new(off_x, off_y);
