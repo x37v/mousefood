@@ -41,7 +41,7 @@ where
     pub font_italic: Option<MonoFont<'static>>,
 
     /// Determines how the view is vertically aligned when the display height
-    /// is not an exact multiple of the font hight.
+    /// is not an exact multiple of the font height.
     pub vertical_alignment: TerminalAlignment,
 
     /// Determines how the view is horizontally aligned when the display width
