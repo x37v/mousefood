@@ -14,10 +14,14 @@ use ratatui_core::backend::{Backend, ClearType};
 use ratatui_core::layout;
 use ratatui_core::style;
 
+/// Terminal alignment
 #[derive(Clone, Copy)]
 pub enum TerminalAlignment {
+    /// Alignment with the start of the terminal: left or top.
     Start,
+    /// Best effort alignment with the center of the terminal.
     Center,
+    /// Alignment with the end of the terminal: right or bottom.
     End,
 }
 
@@ -36,12 +40,12 @@ where
     /// Italic font.
     pub font_italic: Option<MonoFont<'static>>,
 
-    /// If the display isn't a prefect multiple of the font height, how should the view be
-    /// displayed in the space given.
+    /// Determines how the view is vertically aligned when the display height
+    /// is not an exact multiple of the font hight.
     pub vertical_alignment: TerminalAlignment,
 
-    /// If the display isn't a prefect multiple of the font width, how should the view be
-    /// displayed in the space given.
+    /// Determines how the view is horizontally aligned when the display width
+    /// is not an exact multiple of the font width.
     pub horizontal_alignment: TerminalAlignment,
 }
 
